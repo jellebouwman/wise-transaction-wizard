@@ -1,4 +1,4 @@
-import { Configuration } from "./main";
+import { Configuration } from "./config";
 import { intervalToDuration } from "date-fns";
 
 function formatDate(date: Date): string {

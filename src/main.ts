@@ -1,7 +1,14 @@
-import { calculateNumberOfClicks } from "./date";
-import { fileFormatToExt, processConfiguration } from "./config";
-import { initializePlaywright } from "./playwright";
-import dedent from "dedent";
+import { processConfiguration } from "./config";
+import {
+  chooseAccount,
+  chooseBalance,
+  downloadStatement,
+  initializePlaywright,
+  logInToWise,
+  openStatementsAndReportsPage,
+  setDateFormFields,
+  setFixedFormFields,
+} from "./playwright";
 
 async function main() {
   // Reads out the .env file and sets the environment variables
@@ -10,90 +17,27 @@ async function main() {
 
   const page = await initializePlaywright();
 
-  // Go to Wise and go to sign in page.
+  // Go to Wise.
   await page.goto("https://wise.com");
   await page.getByRole("button", { name: "Accept" }).click();
-  await page.getByRole("link", { name: "Log in" }).click();
 
-  // Sign in
-  await page
-    .getByRole("textbox", { name: "Your email address" })
-    .fill(config.email);
-  await page
-    .getByRole("textbox", { name: "Your password" })
-    .fill(config.password);
-  await page.getByRole("button", { name: "Log in" }).click();
+  await logInToWise(page, config);
 
-  // Choose an account
-  // I have multiple accounts, so I need to choose one.
-  // Have not tested this with an account that only has one account.
-  await page.getByRole("button", { name: config.wiseAccount }).click();
+  await chooseAccount(page, config.wiseAccount);
 
-  // Go to statements and reports
-  await page
-    .getByRole("button", { name: "Open or close account menu" })
-    .click();
-  await page.getByRole("menuitem", { name: "Statements and reports" }).click();
-  await page.getByRole("button", { name: "Statement Transactions" }).click();
+  await openStatementsAndReportsPage(page, config);
 
-  // Choose the balance or jar
-  await page.getByRole("button", { name: "Your balance or jar" }).click();
-  await page.getByRole("option", { name: config.wiseBalances[0] }).click();
+  await setFixedFormFields(page, config);
 
-  // Choose the date range
-  await page.getByLabel("Start date").click();
-  // Find the correct month page.
-  const startMonthPickerButton = page.getByRole("button", {
-    name: "Go to 20 year view",
-  });
+  await setDateFormFields(page, config);
 
-  const startMonthInnerText = await startMonthPickerButton.innerText();
-  const numberOfClicks = calculateNumberOfClicks(startMonthInnerText, config);
+  // Choose a balance, download, save and repeat for all balances
 
-  for (let i = 0; i < numberOfClicks; i++) {
-    await page.getByRole("button", { name: "previous month" }).click();
+  for (const balance of config.wiseBalances) {
+    await chooseBalance(page, balance);
+
+    await downloadStatement(page, config, balance);
   }
-
-  await page
-    .getByRole("button", { name: config.datePickerStrings.startDate })
-    .click();
-
-  await page.getByLabel("End date").click();
-  // Find the correct month page.
-  const endMonthPickerButton = page.getByRole("button", {
-    name: "Go to 20 year view",
-  });
-  const endMonthInnerText = await endMonthPickerButton.innerText();
-  const numberOfClicksToEndMonth = calculateNumberOfClicks(
-    endMonthInnerText,
-    config,
-  );
-
-  for (let i = 0; i < numberOfClicksToEndMonth; i++) {
-    await page.getByRole("button", { name: "previous month" }).click();
-  }
-  await page
-    .getByRole("button", { name: config.datePickerStrings.endDate })
-    .click();
-
-  // Choose the file format
-  await page.getByRole("button", { name: "File format" }).click();
-  await page.getByRole("option", { name: config.fileFormat }).click();
-
-  // Get ready to download the files
-  await page.getByRole("button", { name: "Download" }).click();
-  await page
-    .getByRole("textbox", { name: "Your password" })
-    .fill(config.password);
-
-  // Start waiting for download before clicking. Note no await.
-  const downloadPromise = page.waitForEvent("download");
-  await page.getByRole("button", { name: "Done" }).click();
-  const download = await downloadPromise;
-  // Wait for the download process to complete and save the downloaded file somewhere.
-  await download.saveAs(
-    `./downloads/${String(config.wiseAccount).toLowerCase()}-${config.year}-${String(config.month).padStart(2, "0")}${fileFormatToExt(config.fileFormat)}`,
-  );
 
   page.close();
 }

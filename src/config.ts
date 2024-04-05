@@ -16,6 +16,11 @@ export interface Configuration {
   year: number;
 }
 
+// TODO: Improve the error handling and hand holding
+// When reading from the environment variables
+// Alternatively, we could move to a CI wizard for missing variables:
+// Set the things that are fixed, ask the things that are missing,
+// something like a month / year might change more often.
 export function processConfiguration(): Configuration {
   if (!process.env.WISE_EMAIL) {
     console.error("Please provide WISE_EMAIL in .env file");
