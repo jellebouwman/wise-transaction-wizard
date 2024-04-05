@@ -11,7 +11,7 @@ pnpm run exec
 
 ## TO DO
 
-- Add multi balance support
+- ~~Add multi balance support~~
 - Add email support? Maybe a separate package.
 - Add multi format support
 - Allow to choose whether or not you want transaction fees separate
