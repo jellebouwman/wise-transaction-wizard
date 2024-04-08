@@ -13,9 +13,8 @@ pnpm run exec
 
 - ~~Add multi balance support~~
 - Add email support? Maybe a separate package.
-- Add multi format support
+- ~~Add multi format support~~
 - Allow to choose whether or not you want transaction fees separate
 - Choose Language
 - Add a `WISE Stamp of Approval`! 💮
 - Add a README (sort of done, right?)
-

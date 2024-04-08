@@ -1,6 +1,8 @@
 import { getDateRanges, getMonthPickerString } from "./date";
 import "dotenv/config";
 
+const fileFormats = ["PDF", "XLSX", "CSV", "XML", "MT940"] as const;
+
 export interface Configuration {
   datePickerStrings: {
     startDate: string;
@@ -9,7 +11,7 @@ export interface Configuration {
   };
   email: string;
   month: number;
-  fileFormat: "CSV";
+  fileFormat: (typeof fileFormats)[number];
   password: string;
   wiseAccount: string;
   wiseBalances: string[];
@@ -58,6 +60,17 @@ export function processConfiguration(): Configuration {
   }
   const year = parseInt(process.env.YEAR);
 
+  let fileFormat: Configuration["fileFormat"];
+  if (!process.env.OUTPUT_FORMAT) {
+    console.log("No OUTPUT_FORMAT provided in .env file, defaulting to CSV");
+    fileFormat = "CSV";
+  } else if (!fileFormats.includes(process.env.OUTPUT_FORMAT as any)) {
+    console.error("Invalid OUTPUT_FORMAT provided in .env file");
+    process.exit(1);
+  } else {
+    fileFormat = process.env.OUTPUT_FORMAT as any;
+  }
+
   const range = getDateRanges(month, year);
 
   return {
@@ -72,11 +85,10 @@ export function processConfiguration(): Configuration {
     wiseBalances,
     month,
     year,
-    fileFormat: "CSV",
+    fileFormat,
   };
 }
 
 export function fileFormatToExt(format: Configuration["fileFormat"]): string {
-  if (format === "CSV") return ".csv";
-  throw Error(`Unknown file format: ${format}`);
+  return "." + format.toLowerCase();
 }

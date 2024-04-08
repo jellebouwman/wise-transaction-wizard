@@ -25,7 +25,7 @@ async function main() {
 
   await chooseAccount(page, config.wiseAccount);
 
-  await openStatementsAndReportsPage(page, config);
+  await openStatementsAndReportsPage(page);
 
   await setFixedFormFields(page, config);
 
